@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+streamlit>=1.36.0
+sqlalchemy>=2.0.30
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+pypdf>=4.2.0
+apscheduler>=3.10.4
+requests>=2.32.0
+python-multipart>=0.0.9
+pandas>=2.2.0

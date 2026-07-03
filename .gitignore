@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+backend/data/recruit.db
+backend/data/recruit.db-*
+backend/data/tencent_docs_mock.csv
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
