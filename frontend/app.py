@@ -192,6 +192,275 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
     box-shadow: 0 10px 26px rgba(37, 99, 235, 0.08);
 }
 
+.rf-work-visual {
+    position: relative;
+    min-height: 360px;
+    margin-top: 1.6rem;
+    overflow: hidden;
+    border: 1px solid var(--rf-border);
+    border-radius: 0.5rem;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.20)),
+        linear-gradient(135deg, #eef6ff 0%, #f8fbff 46%, #edf7f2 100%);
+    box-shadow: 0 18px 42px rgba(31, 41, 55, 0.06);
+}
+
+.rf-work-window {
+    position: absolute;
+    inset: 2.1rem 2.4rem auto auto;
+    width: 44%;
+    height: 58%;
+    border-radius: 0.5rem;
+    background:
+        linear-gradient(180deg, rgba(157, 197, 255, 0.38), rgba(255, 255, 255, 0.40)),
+        linear-gradient(135deg, #dcecff, #f4fbff);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.rf-work-window::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 42%;
+    background:
+        linear-gradient(90deg, transparent 0 8%, rgba(30, 41, 59, 0.14) 8% 15%, transparent 15% 23%,
+            rgba(30, 41, 59, 0.11) 23% 30%, transparent 30% 39%, rgba(30, 41, 59, 0.16) 39% 47%,
+            transparent 47% 58%, rgba(30, 41, 59, 0.13) 58% 66%, transparent 66% 100%);
+    opacity: 0.72;
+}
+
+.rf-work-sun {
+    position: absolute;
+    width: 4.8rem;
+    height: 4.8rem;
+    right: 17%;
+    top: 18%;
+    border-radius: 50%;
+    background: #ffd88a;
+    box-shadow: 0 0 34px rgba(255, 196, 87, 0.55);
+    animation: rfSun 7s ease-in-out infinite;
+}
+
+.rf-work-desk {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    bottom: 3rem;
+    height: 4.25rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(180deg, #ffffff, #dfe8f2);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    box-shadow: 0 18px 36px rgba(31, 41, 55, 0.12);
+}
+
+.rf-work-laptop {
+    position: absolute;
+    left: 11%;
+    bottom: 6.2rem;
+    width: 18rem;
+    height: 10.2rem;
+    border-radius: 0.5rem 0.5rem 0.28rem 0.28rem;
+    background: #20293a;
+    border: 0.65rem solid #303b51;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.22);
+}
+
+.rf-work-laptop::before {
+    content: "";
+    position: absolute;
+    inset: 1.15rem 1.35rem;
+    border-radius: 0.35rem;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.20) 0 26%, transparent 26% 100%),
+        linear-gradient(180deg, #dceeff, #f5fbff);
+}
+
+.rf-work-laptop::after {
+    content: "";
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    bottom: -1.65rem;
+    height: 0.62rem;
+    border-radius: 999px;
+    background: #94a3b8;
+}
+
+.rf-work-person {
+    position: absolute;
+    left: 28.6rem;
+    bottom: 6.5rem;
+    width: 5.6rem;
+    height: 8.8rem;
+}
+
+.rf-work-person::before {
+    content: "";
+    position: absolute;
+    left: 1.95rem;
+    top: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: #f5bd9d;
+}
+
+.rf-work-person::after {
+    content: "";
+    position: absolute;
+    left: 1.2rem;
+    top: 2.05rem;
+    width: 3.2rem;
+    height: 5.7rem;
+    border-radius: 1.5rem 1.5rem 0.6rem 0.6rem;
+    background: linear-gradient(180deg, #4462d8, #273b9f);
+}
+
+.rf-work-card {
+    position: absolute;
+    width: 7.3rem;
+    height: 4.7rem;
+    border-radius: 0.46rem;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    box-shadow: 0 10px 24px rgba(31, 41, 55, 0.09);
+    animation: rfFloatCard 6.5s ease-in-out infinite;
+}
+
+.rf-work-card::before {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 0.4rem;
+    background: #dbeafe;
+}
+
+.rf-work-card::after {
+    content: "";
+    position: absolute;
+    left: 2.7rem;
+    right: 0.75rem;
+    top: 0.88rem;
+    height: 2.05rem;
+    border-radius: 0.25rem;
+    background:
+        linear-gradient(#94a3b8, #94a3b8) 0 0 / 100% 0.25rem no-repeat,
+        linear-gradient(#cbd5e1, #cbd5e1) 0 0.72rem / 82% 0.22rem no-repeat,
+        linear-gradient(#cbd5e1, #cbd5e1) 0 1.38rem / 64% 0.22rem no-repeat;
+}
+
+.rf-work-card.card-a {
+    left: 41%;
+    top: 7.2rem;
+}
+
+.rf-work-card.card-b {
+    left: 50%;
+    top: 10.8rem;
+    animation-delay: -1.7s;
+}
+
+.rf-work-card.card-c {
+    left: 59%;
+    top: 6.4rem;
+    animation-delay: -3.1s;
+}
+
+.rf-ai-node {
+    position: absolute;
+    right: 10%;
+    bottom: 7.4rem;
+    width: 8.8rem;
+    height: 8.8rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+    box-shadow: 0 18px 40px rgba(37, 99, 235, 0.20);
+    animation: rfPulseNode 4.5s ease-in-out infinite;
+}
+
+.rf-ai-node::before {
+    content: "AI";
+    position: absolute;
+    inset: 1.45rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1e3a8a;
+    font-weight: 840;
+    font-size: 1.45rem;
+}
+
+.rf-flow-line {
+    position: absolute;
+    left: 36%;
+    right: 19%;
+    bottom: 12rem;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.48), transparent);
+}
+
+.rf-flow-line::after {
+    content: "";
+    position: absolute;
+    top: -0.32rem;
+    left: 10%;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 0 18px rgba(37, 99, 235, 0.55);
+    animation: rfTravel 3.8s linear infinite;
+}
+
+.rf-work-note {
+    position: absolute;
+    left: 7%;
+    top: 2rem;
+    max-width: 24rem;
+}
+
+.rf-work-note-title {
+    color: #1e293b;
+    font-size: 1.28rem;
+    font-weight: 790;
+    line-height: 1.25;
+}
+
+.rf-work-note-copy {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-top: 0.62rem;
+}
+
+@keyframes rfSun {
+    0%, 100% { transform: translateY(0); opacity: 0.92; }
+    50% { transform: translateY(-0.55rem); opacity: 1; }
+}
+
+@keyframes rfFloatCard {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-0.7rem) rotate(1deg); }
+}
+
+@keyframes rfPulseNode {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+@keyframes rfTravel {
+    from { transform: translateX(0); opacity: 0; }
+    12% { opacity: 1; }
+    82% { opacity: 1; }
+    to { transform: translateX(39vw); opacity: 0; }
+}
+
 [data-testid="stFileUploader"] button,
 .stButton > button,
 [data-testid="stLinkButton"] a {
@@ -299,6 +568,50 @@ textarea {
     h1 {
         font-size: 2rem !important;
     }
+
+    .rf-work-visual {
+        min-height: 420px;
+    }
+
+    .rf-work-note {
+        left: 1.4rem;
+        right: 1.4rem;
+        max-width: none;
+    }
+
+    .rf-work-window {
+        width: 70%;
+        height: 36%;
+        right: 1.2rem;
+        top: 9.8rem;
+    }
+
+    .rf-work-laptop {
+        left: 1.6rem;
+        width: 14rem;
+        bottom: 6.1rem;
+    }
+
+    .rf-work-person,
+    .rf-work-card.card-c {
+        display: none;
+    }
+
+    .rf-work-card.card-a {
+        left: 50%;
+        top: 13.2rem;
+    }
+
+    .rf-work-card.card-b {
+        left: 58%;
+        top: 17rem;
+    }
+
+    .rf-ai-node {
+        right: 1.6rem;
+        width: 6.5rem;
+        height: 6.5rem;
+    }
 }
 </style>
 """
@@ -372,6 +685,32 @@ def render_sidebar() -> str:
         format_func=lambda value: f"{value} ｜ {MODULE_PAGES[value]}",
     )
     return MODULE_PAGES[module]
+
+
+def render_upload_work_visual() -> None:
+    st.markdown(
+        """
+        <div class="rf-work-visual" aria-hidden="true">
+            <div class="rf-work-note">
+                <div class="rf-work-note-title">每一次面试邀约，都是一次合适的相遇</div>
+                <div class="rf-work-note-copy">
+                    清晨的工位、翻开的简历、期待中的新同事，下一段共同工作的故事正在靠近。
+                </div>
+            </div>
+            <div class="rf-work-window"></div>
+            <div class="rf-work-sun"></div>
+            <div class="rf-flow-line"></div>
+            <div class="rf-work-laptop"></div>
+            <div class="rf-work-person"></div>
+            <div class="rf-work-card card-a"></div>
+            <div class="rf-work-card card-b"></div>
+            <div class="rf-work-card card-c"></div>
+            <div class="rf-ai-node"></div>
+            <div class="rf-work-desk"></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def show_response_error(response: requests.Response) -> None:
@@ -792,6 +1131,7 @@ def page_upload_resume() -> None:
     )
 
     if not uploaded_files:
+        render_upload_work_visual()
         return
 
     current_files = sync_uploaded_resume_state(uploaded_files)
