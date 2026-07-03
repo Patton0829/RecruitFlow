@@ -1,37 +1,21 @@
 from __future__ import annotations
 
-import base64
 import hashlib
-import html
 import os
+import time as time_module
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
-RECRUIT_STAGES = [
-    "待筛选",
-    "简历通过",
-    "待约一面",
-    "一面待面",
-    "一面通过",
-    "待约二面",
-    "二面待面",
-    "二面通过",
-    "Offer待确认",
-    "已Offer",
-    "已入职",
-    "淘汰",
-    "候选人放弃",
-    "进入人才库",
-]
+FLOW_STAGE_OPTIONS = ["一轮面试", "二轮面试", "offer发放"]
 
 APPLICATION_STATUS = ["进行中", "已通过", "已淘汰", "已放弃", "人才库"]
 HR_DECISIONS = ["待决定", "推进下一轮", "暂不推进", "发Offer", "淘汰", "进入人才库"]
@@ -119,26 +103,19 @@ def infer_city_from_school(school: str | None) -> str:
     return ""
 
 
-def render_pdf_preview(pdf_bytes: bytes | None, file_name: str) -> None:
-    if not pdf_bytes:
+def resume_pdf_url(result: dict[str, Any]) -> str | None:
+    file_path = result.get("file_path")
+    if not file_path:
+        return None
+    return api_url(f"/uploads/{quote(Path(file_path).name)}")
+
+
+def render_pdf_preview(result: dict[str, Any], file_name: str) -> None:
+    pdf_url = resume_pdf_url(result)
+    if not pdf_url:
         return
-    encoded = base64.b64encode(pdf_bytes).decode("ascii")
-    safe_file_name = html.escape(file_name)
-    components.html(
-        f"""
-        <div style="border:1px solid #d7dce2;border-radius:6px;overflow:hidden;background:#fff;">
-          <div style="padding:10px 12px;font:14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                      border-bottom:1px solid #edf0f4;color:#323743;">
-            {safe_file_name}
-          </div>
-          <iframe
-            src="data:application/pdf;base64,{encoded}#toolbar=1&navpanes=0"
-            style="width:100%;height:620px;border:0;"
-          ></iframe>
-        </div>
-        """,
-        height=680,
-    )
+    st.link_button("新标签打开简历 PDF", pdf_url)
+    st.iframe(f"{pdf_url}#toolbar=1&navpanes=0", height=640)
 
 
 def fetch_candidates(params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -211,8 +188,18 @@ def parse_uploaded_resumes(uploaded_files: list[Any]) -> None:
     status = st.empty()
     total = len(pending_files)
     for index, (file_key, uploaded_file, content) in enumerate(pending_files, start=1):
-        progress.progress((index - 1) / total)
-        status.info(f"正在解析 {index}/{total}：{uploaded_file.name}")
+        base_progress = (index - 1) / total
+        per_file_span = 1 / total
+        progress.progress(base_progress)
+        status.info(f"正在解析 {index}/{total}：{uploaded_file.name}｜读取上传文件")
+        for offset, label in [
+            (0.08, "读取上传文件"),
+            (0.18, "提取 PDF 文本"),
+            (0.30, "调用 AI 解析"),
+        ]:
+            time_module.sleep(0.35)
+            progress.progress(min(base_progress + per_file_span * offset, 0.98))
+            status.info(f"正在解析 {index}/{total}：{uploaded_file.name}｜{label}")
         files = {"file": (uploaded_file.name, content, "application/pdf")}
         try:
             response = requests.post(api_url("/api/resumes/parse"), files=files, timeout=90)
@@ -229,6 +216,9 @@ def parse_uploaded_resumes(uploaded_files: list[Any]) -> None:
                     parse_errors[file_key] = response.json().get("detail", response.text)
                 except ValueError:
                     parse_errors[file_key] = response.text
+        progress.progress(min(base_progress + per_file_span * 0.82, 0.98))
+        status.info(f"正在解析 {index}/{total}：{uploaded_file.name}｜生成确认表单")
+        time_module.sleep(0.35)
         progress.progress(index / total)
 
     status.success(f"解析完成：成功 {len(parsed_resumes)} 份，失败 {len(parse_errors)} 份。")
@@ -240,7 +230,7 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
 
     with st.expander(f"{file_name}｜解析结果确认", expanded=True):
         st.subheader("上传简历")
-        render_pdf_preview(result.get("uploaded_pdf_bytes"), file_name)
+        render_pdf_preview(result, file_name)
         st.subheader("解析结果确认")
         st.caption(
             f"解析模式：{result.get('parser_mode', 'unknown')}｜"
@@ -292,8 +282,8 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                 source = st.text_input("招聘来源", value="BOSS直聘", key=f"{prefix}_source")
                 stage = st.selectbox(
                     "当前阶段",
-                    RECRUIT_STAGES,
-                    index=RECRUIT_STAGES.index("待筛选"),
+                    FLOW_STAGE_OPTIONS,
+                    index=0,
                     key=f"{prefix}_stage",
                 )
             with col5:
@@ -304,20 +294,18 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
             with col6:
                 owner_hr = st.text_input("负责 HR", value="", key=f"{prefix}_owner_hr")
                 interviewer = st.text_input("面试官", value="", key=f"{prefix}_interviewer")
-                has_interview_time = st.checkbox(
-                    "已约面试时间", value=False, key=f"{prefix}_has_interview_time"
-                )
 
             interview_time_value: str | None = None
-            if has_interview_time:
+            if stage in {"一轮面试", "二轮面试"}:
+                st.markdown(f"**预约{stage}时间**")
                 time_col1, time_col2 = st.columns(2)
                 with time_col1:
                     interview_date = st.date_input(
-                        "面试日期", value=date.today(), key=f"{prefix}_interview_date"
+                        "预约日期", value=date.today(), key=f"{prefix}_interview_date"
                     )
                 with time_col2:
                     interview_clock = st.time_input(
-                        "面试时间",
+                        "预约时间",
                         value=time(hour=10, minute=0),
                         key=f"{prefix}_interview_clock",
                     )
@@ -395,7 +383,6 @@ def page_upload_resume() -> None:
     )
 
     if not uploaded_files:
-        st.info("选择 PDF 后系统会自动提取文本并解析，不需要额外点击解析按钮。")
         return
 
     parse_uploaded_resumes(uploaded_files)
@@ -422,7 +409,7 @@ def page_candidate_list() -> None:
     st.title("候选人列表")
     filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
     with filter_col1:
-        stage = st.selectbox("阶段筛选", ["全部"] + RECRUIT_STAGES)
+        stage = st.selectbox("阶段筛选", ["全部"] + FLOW_STAGE_OPTIONS)
     with filter_col2:
         status = st.selectbox("状态筛选", ["全部"] + APPLICATION_STATUS)
     with filter_col3:
@@ -494,9 +481,9 @@ def page_candidate_list() -> None:
         with edit_col1:
             new_stage = st.selectbox(
                 "阶段",
-                RECRUIT_STAGES,
-                index=RECRUIT_STAGES.index(selected["stage"])
-                if selected["stage"] in RECRUIT_STAGES
+                FLOW_STAGE_OPTIONS,
+                index=FLOW_STAGE_OPTIONS.index(selected["stage"])
+                if selected["stage"] in FLOW_STAGE_OPTIONS
                 else 0,
             )
             new_status = st.selectbox(
@@ -518,13 +505,13 @@ def page_candidate_list() -> None:
             new_owner_hr = st.text_input("负责 HR", value=selected.get("owner_hr") or "")
         with edit_col3:
             current_dt = parse_datetime(selected.get("interview_time"))
-            set_interview_time = st.checkbox("设置面试时间", value=current_dt is not None)
-            if set_interview_time:
+            if new_stage in {"一轮面试", "二轮面试"}:
+                st.markdown(f"**预约{new_stage}时间**")
                 new_date = st.date_input(
-                    "面试日期", value=current_dt.date() if current_dt else date.today()
+                    "预约日期", value=current_dt.date() if current_dt else date.today()
                 )
                 new_time = st.time_input(
-                    "面试时间", value=current_dt.time() if current_dt else time(hour=10)
+                    "预约时间", value=current_dt.time() if current_dt else time(hour=10)
                 )
             else:
                 new_date = None
@@ -536,7 +523,7 @@ def page_candidate_list() -> None:
         if submitted:
             interview_time_value = (
                 datetime.combine(new_date, new_time).isoformat()
-                if set_interview_time and new_date and new_time
+                if new_stage in {"一轮面试", "二轮面试"} and new_date and new_time
                 else None
             )
             payload = {

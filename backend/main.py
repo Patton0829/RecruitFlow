@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
+from .config import UPLOAD_DIR
 from .database import init_db
 from .routers import candidates, dashboard, reminders, resumes
 from .services.reminder_service import create_scheduler
@@ -39,6 +41,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.include_router(resumes.router, prefix="/api/resumes", tags=["resumes"])
 app.include_router(candidates.router, prefix="/api", tags=["candidates"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
