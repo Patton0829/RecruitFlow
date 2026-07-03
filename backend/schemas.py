@@ -127,6 +127,7 @@ class ConfirmCandidateResponse(BaseModel):
     matched_existing: bool
     match_type: str | None = None
     synced_to_tencent_docs: bool
+    tencent_docs_url: str | None = None
 
 
 class ApplicationUpdate(BaseModel):

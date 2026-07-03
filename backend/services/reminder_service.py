@@ -77,7 +77,7 @@ class ReminderService:
                 f"｜面试官：{interviewer}｜负责HR：{owner_hr}"
             )
         lines.extend(["", "请提前确认候选人到场情况。"])
-        content = "\n".join(lines)
+        content = self._append_tencent_docs_link("\n".join(lines))
 
         sent = self.bot.send_markdown(content)
         if not sent:
@@ -124,6 +124,7 @@ class ReminderService:
         sent_count = 0
         for app in apps:
             content = self._build_1h_reminder(app.candidate, app)
+            content = self._append_tencent_docs_link(content)
             if self.bot.send_markdown(content):
                 app.reminder_1h_sent_at = datetime.now()
                 app.last_synced_at = datetime.now()
@@ -140,7 +141,7 @@ class ReminderService:
         }
 
     def send_test_message(self) -> dict:
-        content = "【招聘提醒测试】\n> 企业微信群机器人连接正常。"
+        content = self._append_tencent_docs_link("【招聘提醒测试】\n> 企业微信群机器人连接正常。")
         ok = self.bot.send_markdown(content)
         return {
             "success": ok,
@@ -148,6 +149,12 @@ class ReminderService:
             "message": "测试消息已发送。" if ok else "测试消息发送失败。",
             "logs": [content],
         }
+
+    def _append_tencent_docs_link(self, content: str) -> str:
+        doc_url = self.tencent_client.get_document_url()
+        if not doc_url:
+            return content
+        return f"{content}\n\n腾讯文档台账：[打开查看]({doc_url})"
 
     @staticmethod
     def _build_1h_reminder(candidate: Candidate, app: Application) -> str:

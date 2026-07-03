@@ -45,6 +45,7 @@ API_BASE_URL=http://localhost:8000 streamlit run frontend/app.py
 `.env` 中可以按需配置：
 
 ```env
+LLM_PROVIDER=openai_compatible
 LLM_API_KEY=
 LLM_BASE_URL=
 LLM_MODEL=
@@ -55,6 +56,7 @@ TENCENT_DOCS_OPEN_ID=
 TENCENT_DOCS_FILE_ID=
 TENCENT_DOCS_SHEET_ID=
 TENCENT_DOCS_TITLE=RecruitFlow AI 候选人台账
+TENCENT_DOCS_URL=
 DAILY_SUMMARY_HOUR=9
 DAILY_SUMMARY_MINUTE=0
 REMINDER_SCAN_INTERVAL_MINUTES=5
@@ -76,13 +78,14 @@ TENCENT_DOCS_ACCESS_TOKEN=你的 access_token
 TENCENT_DOCS_OPEN_ID=你的 open_id
 ```
 
-启动后第一次保存候选人时，系统会自动创建一个在线表格，写入表头，并把候选人投递记录写入第二行开始的数据区。创建出来的 `book_id`、`sheet_id`、腾讯文档 URL 和 `application_id -> 行号` 映射会保存在本地 `backend/data/tencent_docs_state.json`，该文件已加入 `.gitignore`。
+启动后第一次保存候选人时，系统会自动创建一个在线表格，写入表头，并把候选人投递记录写入第二行开始的数据区。创建出来的 `book_id`、`sheet_id`、腾讯文档 URL 和 `application_id -> 行号` 映射会保存在本地 `backend/data/tencent_docs_state.json`，该文件已加入 `.gitignore`。保存成功后前端会展示腾讯文档链接，企业微信群提醒也会附带这条台账链接。
 
 如果你希望写入已有腾讯文档表格，可以额外配置：
 
 ```env
 TENCENT_DOCS_FILE_ID=300000000$xxxxxxxxxxxx
 TENCENT_DOCS_SHEET_ID=BB0000
+TENCENT_DOCS_URL=https://docs.qq.com/sheet/xxxxxxxx
 ```
 
 `access_token` 会过期；当前 MVP 直接使用你填入的 token，不包含 OAuth refresh token 自动刷新流程。

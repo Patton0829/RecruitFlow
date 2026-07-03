@@ -43,10 +43,12 @@ def confirm_candidate(payload: ConfirmCandidateRequest, db: Session = Depends(ge
     db.flush()
 
     synced = False
+    tencent_docs_url = None
     try:
         client = TencentDocsClient()
         application.tencent_record_id = client.add_or_update_application(candidate, application)
         application.last_synced_at = datetime.now()
+        tencent_docs_url = client.get_document_url()
         synced = True
     except Exception as exc:
         print(f"[TencentDocsClient] sync failed: {exc}")
@@ -62,6 +64,7 @@ def confirm_candidate(payload: ConfirmCandidateRequest, db: Session = Depends(ge
         matched_existing=matched_existing,
         match_type=match_type,
         synced_to_tencent_docs=synced,
+        tencent_docs_url=tencent_docs_url,
     )
 
 

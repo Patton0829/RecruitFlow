@@ -28,6 +28,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 class Settings:
+    llm_provider: str = os.getenv("LLM_PROVIDER") or "openai_compatible"
     llm_api_key: str = os.getenv("LLM_API_KEY") or ""
     llm_base_url: str = os.getenv("LLM_BASE_URL") or "https://api.openai.com/v1"
     llm_model: str = os.getenv("LLM_MODEL") or ""
@@ -43,6 +44,7 @@ class Settings:
     tencent_docs_file_id: str = os.getenv("TENCENT_DOCS_FILE_ID") or ""
     tencent_docs_sheet_id: str = os.getenv("TENCENT_DOCS_SHEET_ID") or ""
     tencent_docs_title: str = os.getenv("TENCENT_DOCS_TITLE") or "RecruitFlow AI 候选人台账"
+    tencent_docs_url: str = os.getenv("TENCENT_DOCS_URL") or ""
 
     daily_summary_hour: int = _env_int("DAILY_SUMMARY_HOUR", 9)
     daily_summary_minute: int = _env_int("DAILY_SUMMARY_MINUTE", 0)

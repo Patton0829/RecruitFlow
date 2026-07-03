@@ -79,6 +79,14 @@ class TencentDocsClient:
         if changed:
             self._write_rows(rows)
 
+    def get_document_url(self) -> str | None:
+        if not self.real_mode:
+            return None
+        if settings.tencent_docs_url:
+            return settings.tencent_docs_url
+        state_url = self._read_state().get("url")
+        return str(state_url) if state_url else None
+
     def _add_or_update_real(self, candidate: Candidate, application: Application) -> str:
         book_id, sheet_id, state = self._ensure_real_sheet()
         rows = state.setdefault("rows", {})
@@ -129,6 +137,8 @@ class TencentDocsClient:
             state["book_id"] = book_id
             state["url"] = created.get("url", "")
             state["title"] = created.get("title", settings.tencent_docs_title)
+        elif settings.tencent_docs_url:
+            state["url"] = settings.tencent_docs_url
 
         if not sheet_id:
             sheet_id = self._create_recruit_sheet(book_id)

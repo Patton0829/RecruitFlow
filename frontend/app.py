@@ -298,6 +298,8 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                         )
                         if response.get("matched_existing"):
                             st.info(f"已关联已有候选人，匹配方式：{response.get('match_type')}")
+                        if response.get("tencent_docs_url"):
+                            st.link_button("打开腾讯文档台账", response["tencent_docs_url"])
 
         saved_response = st.session_state.get(f"save_response_{result_key}")
         if saved_response:
@@ -306,6 +308,8 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                 f"candidate_id={saved_response['candidate_id']}，"
                 f"application_id={saved_response['application_id']}"
             )
+            if saved_response.get("tencent_docs_url"):
+                st.link_button("打开腾讯文档台账", saved_response["tencent_docs_url"])
 
 
 def page_upload_resume() -> None:
