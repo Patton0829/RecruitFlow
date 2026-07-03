@@ -104,8 +104,8 @@ def unique_people(items: list[str]) -> list[str]:
     return people
 
 
-def join_people(selected: list[str], custom_text: str | None = None) -> str:
-    return "、".join(unique_people([*selected, *split_people(custom_text)]))
+def join_people(selected: list[str]) -> str:
+    return "、".join(unique_people(selected))
 
 
 def people_multiselect(
@@ -115,21 +115,14 @@ def people_multiselect(
     key_prefix: str,
 ) -> str:
     current_people = split_people(current_value)
-    selected_defaults = [person for person in current_people if person in options]
-    custom_defaults = [person for person in current_people if person not in options]
+    selectable_options = unique_people([*options, *current_people])
     selected = st.multiselect(
         label,
-        options,
-        default=selected_defaults,
+        selectable_options,
+        default=current_people,
         key=f"{key_prefix}_select",
     )
-    custom = st.text_input(
-        f"其他{label}",
-        value="、".join(custom_defaults),
-        key=f"{key_prefix}_custom",
-        placeholder="可输入多个，用顿号或逗号分隔",
-    )
-    return join_people(selected, custom)
+    return join_people(selected)
 
 
 def parse_datetime(value: str | None) -> datetime | None:
