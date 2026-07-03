@@ -68,9 +68,24 @@ class ResumeExtractor:
     def extract(self, resume_text: str) -> ExtractedResume:
         prompt = PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
         if self.llm_client.configured:
-            raw_output = self.llm_client.complete(prompt)
-            parsed = self._parse_llm_output(raw_output)
-            return ExtractedResume(parsed=parsed, raw_output=raw_output, parser_mode="llm")
+            try:
+                raw_output = self.llm_client.complete(prompt)
+                parsed = self._parse_llm_output(raw_output)
+                return ExtractedResume(parsed=parsed, raw_output=raw_output, parser_mode="llm")
+            except Exception as exc:
+                parsed = self._fallback_extract(resume_text)
+                raw_output = json.dumps(
+                    {
+                        "fallback_reason": f"{exc.__class__.__name__}: {str(exc)[:500]}",
+                        "parsed": parsed.model_dump(),
+                    },
+                    ensure_ascii=False,
+                )
+                return ExtractedResume(
+                    parsed=parsed,
+                    raw_output=raw_output,
+                    parser_mode="local_fallback_after_llm_error",
+                )
 
         parsed = self._fallback_extract(resume_text)
         raw_output = parsed.model_dump_json(ensure_ascii=False)
