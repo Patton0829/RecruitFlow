@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import os
 import re
 import time as time_module
@@ -22,6 +23,280 @@ APPLICATION_STATUS = ["进行中", "已通过", "已淘汰", "已放弃", "人�
 HR_DECISIONS = ["待决定", "推进下一轮", "暂不推进", "发Offer", "淘汰", "进入人才库"]
 HR_OPTIONS = ["张三", "李四", "王五", "赵六", "王王"]
 INTERVIEWER_OPTIONS = ["李工", "王工", "张工", "赵经理", "李四"]
+PAGE_OPTIONS = ["上传简历", "候选人列表", "招聘看板", "面试提醒测试"]
+
+GLOBAL_STYLES = """
+<style>
+:root {
+    --rf-bg: #f5f7fb;
+    --rf-panel: #ffffff;
+    --rf-panel-soft: #f8fafc;
+    --rf-border: #dfe6ef;
+    --rf-border-strong: #cbd5e1;
+    --rf-text: #202534;
+    --rf-muted: #697386;
+    --rf-accent: #ff4f4f;
+    --rf-accent-dark: #e43d3d;
+    --rf-blue: #2563eb;
+    --rf-green: #16a34a;
+    --rf-sidebar: #171c2a;
+}
+
+.stApp {
+    background:
+        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.06), transparent 28rem),
+        linear-gradient(180deg, #fbfcff 0%, var(--rf-bg) 42%, #eef3f8 100%);
+    color: var(--rf-text);
+}
+
+#MainMenu,
+footer,
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+[data-testid="stHeader"] {
+    background: transparent;
+}
+
+.block-container {
+    max-width: 1480px;
+    padding-top: 2.25rem;
+    padding-bottom: 4rem;
+}
+
+h1, h2, h3 {
+    color: var(--rf-text);
+    letter-spacing: 0;
+}
+
+h1 {
+    font-size: 2.45rem !important;
+    line-height: 1.15 !important;
+    margin-bottom: 1.15rem !important;
+}
+
+h2 {
+    font-size: 1.6rem !important;
+    margin-top: 1.2rem !important;
+}
+
+h3 {
+    font-size: 1.15rem !important;
+}
+
+p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
+    color: var(--rf-muted);
+}
+
+[data-testid="stSidebar"] {
+    background: var(--rf-sidebar);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding: 2rem 1.35rem;
+}
+
+.rf-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.15rem 0 1.3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    margin-bottom: 1.25rem;
+}
+
+.rf-brand-mark {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.5rem;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--rf-accent), #ff8a5c);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+.rf-brand-title {
+    color: #fff;
+    font-weight: 760;
+    font-size: 1.15rem;
+    line-height: 1.15;
+}
+
+.rf-brand-subtitle {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.82rem;
+    margin-top: 0.18rem;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] span {
+    color: rgba(255, 255, 255, 0.76);
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] {
+    gap: 0.45rem;
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    min-height: 2.45rem;
+    border-radius: 0.5rem;
+    padding: 0.32rem 0.45rem;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.13);
+}
+
+.rf-backend-panel {
+    margin-top: 1.75rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.rf-backend-label {
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 0.78rem;
+    margin-bottom: 0.24rem;
+}
+
+.rf-backend-link {
+    color: #a9d3ff !important;
+    font-size: 0.86rem;
+    text-decoration: none;
+}
+
+[data-testid="stFileUploader"] section {
+    background: var(--rf-panel);
+    border: 1px dashed var(--rf-border-strong);
+    border-radius: 0.65rem;
+    padding: 1.05rem;
+}
+
+[data-testid="stFileUploader"] section:hover {
+    border-color: var(--rf-blue);
+    box-shadow: 0 10px 26px rgba(37, 99, 235, 0.08);
+}
+
+[data-testid="stFileUploader"] button,
+.stButton > button,
+[data-testid="stLinkButton"] a {
+    border-radius: 0.5rem !important;
+    border: 1px solid var(--rf-border-strong) !important;
+    font-weight: 650 !important;
+    min-height: 2.45rem;
+}
+
+.stButton > button:hover,
+[data-testid="stLinkButton"] a:hover {
+    border-color: var(--rf-accent) !important;
+    color: var(--rf-accent-dark) !important;
+}
+
+.stButton > button[kind="primary"] {
+    background: var(--rf-accent) !important;
+    border-color: var(--rf-accent) !important;
+    color: #fff !important;
+    box-shadow: 0 9px 18px rgba(255, 79, 79, 0.22);
+}
+
+.stButton > button[kind="primary"]:hover {
+    background: var(--rf-accent-dark) !important;
+    border-color: var(--rf-accent-dark) !important;
+    color: #fff !important;
+}
+
+[data-testid="stExpander"] {
+    border: 1px solid var(--rf-border) !important;
+    border-radius: 0.65rem !important;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 14px 34px rgba(31, 41, 55, 0.06);
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] details > summary {
+    background: var(--rf-panel-soft);
+    border-bottom: 1px solid var(--rf-border);
+}
+
+[data-testid="stForm"] {
+    border: 0;
+    padding: 0.2rem 0 0;
+}
+
+[data-baseweb="input"] > div,
+[data-baseweb="select"] > div,
+[data-baseweb="textarea"] > div,
+[data-baseweb="base-input"],
+[data-testid="stDateInput"] input,
+[data-testid="stTimeInput"] input {
+    border-radius: 0.5rem !important;
+    background: #f3f6fb !important;
+    border-color: transparent !important;
+}
+
+[data-baseweb="input"] > div:focus-within,
+[data-baseweb="select"] > div:focus-within,
+[data-baseweb="textarea"] > div:focus-within {
+    background: #fff !important;
+    border-color: var(--rf-blue) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+[data-baseweb="tag"] {
+    border-radius: 0.42rem !important;
+    background: var(--rf-accent) !important;
+    color: #fff !important;
+}
+
+[data-testid="stProgress"] > div > div > div > div {
+    background: linear-gradient(90deg, var(--rf-blue), #14b8a6) !important;
+}
+
+[data-testid="stAlert"] {
+    border-radius: 0.65rem;
+    border: 1px solid rgba(31, 41, 55, 0.06);
+}
+
+[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--rf-border);
+    border-radius: 0.65rem;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 10px 26px rgba(31, 41, 55, 0.05);
+}
+
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--rf-border);
+    border-radius: 0.65rem;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(31, 41, 55, 0.04);
+}
+
+textarea {
+    line-height: 1.55 !important;
+}
+
+@media (max-width: 900px) {
+    .block-container {
+        padding-top: 1.35rem;
+    }
+
+    h1 {
+        font-size: 2rem !important;
+    }
+}
+</style>
+"""
 
 SCHOOL_CITY_HINTS = {
     "西安": "西安",
@@ -67,6 +342,37 @@ SCHOOL_CITY_HINTS = {
 
 def api_url(path: str) -> str:
     return f"{API_BASE_URL.rstrip('/')}{path}"
+
+
+def apply_global_styles() -> None:
+    st.markdown(GLOBAL_STYLES, unsafe_allow_html=True)
+
+
+def render_sidebar() -> str:
+    st.sidebar.markdown(
+        """
+        <div class="rf-sidebar-brand">
+            <div class="rf-brand-mark">RF</div>
+            <div>
+                <div class="rf-brand-title">RecruitFlow AI</div>
+                <div class="rf-brand-subtitle">招聘流程提效助手</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    page = st.sidebar.radio("功能", PAGE_OPTIONS)
+    backend_url = html.escape(API_BASE_URL)
+    st.sidebar.markdown(
+        f"""
+        <div class="rf-backend-panel">
+            <div class="rf-backend-label">后端服务</div>
+            <a class="rf-backend-link" href="{backend_url}" target="_blank">{backend_url}</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    return page
 
 
 def show_response_error(response: requests.Response) -> None:
@@ -744,9 +1050,8 @@ def page_reminders() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="RecruitFlow AI｜招聘流程提效助手", layout="wide")
-    st.sidebar.title("RecruitFlow AI｜招聘流程提效助手")
-    page = st.sidebar.radio("功能", ["上传简历", "候选人列表", "招聘看板", "面试提醒测试"])
-    st.sidebar.caption(f"后端：{API_BASE_URL}")
+    apply_global_styles()
+    page = render_sidebar()
 
     if page == "上传简历":
         page_upload_resume()
