@@ -194,7 +194,7 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 
 .rf-work-visual {
     position: relative;
-    min-height: 420px;
+    min-height: 520px;
     margin-top: 1.6rem;
     overflow: hidden;
     border: 1px solid var(--rf-border);
@@ -207,9 +207,9 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 
 .rf-work-window {
     position: absolute;
-    inset: 2.1rem 2.4rem auto auto;
+    inset: 9.8rem 2.4rem auto auto;
     width: 44%;
-    height: 58%;
+    height: 46%;
     border-radius: 0.5rem;
     background:
         linear-gradient(180deg, rgba(157, 197, 255, 0.38), rgba(255, 255, 255, 0.40)),
@@ -237,7 +237,7 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
     width: 4.8rem;
     height: 4.8rem;
     right: 17%;
-    top: 18%;
+    top: 10.9rem;
     border-radius: 50%;
     background: #ffd88a;
     box-shadow: 0 0 34px rgba(255, 196, 87, 0.55);
@@ -362,18 +362,18 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 
 .rf-work-card.card-a {
     left: 41%;
-    top: 7.2rem;
+    top: 13.5rem;
 }
 
 .rf-work-card.card-b {
     left: 50%;
-    top: 10.8rem;
+    top: 17.1rem;
     animation-delay: -1.7s;
 }
 
 .rf-work-card.card-c {
     left: 59%;
-    top: 6.4rem;
+    top: 12.6rem;
     animation-delay: -3.1s;
 }
 
@@ -427,11 +427,10 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 }
 
 .rf-work-note {
-    position: absolute;
-    left: 7%;
-    top: 2rem;
-    max-width: 27rem;
+    position: relative;
+    max-width: none;
     z-index: 7;
+    margin: 1.35rem 1.65rem 0;
     padding: 1rem 1.1rem;
     border-radius: 0.5rem;
     background: rgba(255, 255, 255, 0.76);
@@ -492,7 +491,7 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 .rf-test-cloud {
     position: absolute;
     right: 23%;
-    top: 4.5rem;
+    top: 10.8rem;
     width: 10.5rem;
     height: 5.1rem;
     border-radius: 999px;
@@ -528,7 +527,7 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 .rf-device-stack {
     position: absolute;
     right: 25.6%;
-    top: 5.1rem;
+    top: 11.4rem;
     display: flex;
     gap: 0.45rem;
     align-items: flex-end;
@@ -555,7 +554,7 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
 .rf-quality-check {
     position: absolute;
     right: 18%;
-    top: 7.25rem;
+    top: 13.5rem;
     width: 2.8rem;
     height: 2.8rem;
     border-radius: 50%;
@@ -708,12 +707,14 @@ textarea {
     }
 
     .rf-work-visual {
-        min-height: 420px;
+        min-height: 520px;
     }
 
     .rf-work-note {
-        left: 1.4rem;
-        right: 1.4rem;
+        margin: 1rem;
+        left: auto;
+        right: auto;
+        top: auto;
         max-width: none;
     }
 
@@ -721,7 +722,7 @@ textarea {
         width: 70%;
         height: 36%;
         right: 1.2rem;
-        top: 13rem;
+        top: 16rem;
     }
 
     .rf-work-laptop {
@@ -737,12 +738,12 @@ textarea {
 
     .rf-work-card.card-a {
         left: 50%;
-        top: 15.5rem;
+        top: 18rem;
     }
 
     .rf-work-card.card-b {
         left: 58%;
-        top: 19rem;
+        top: 21.5rem;
     }
 
     .rf-ai-node {
