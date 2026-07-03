@@ -11,6 +11,7 @@ BACKEND_DIR = Path(__file__).resolve().parent
 DATA_DIR = BACKEND_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 MOCK_TENCENT_DOCS_CSV = DATA_DIR / "tencent_docs_mock.csv"
+TENCENT_DOCS_STATE_JSON = DATA_DIR / "tencent_docs_state.json"
 
 load_dotenv(ROOT_DIR / ".env")
 load_dotenv(Path.cwd() / ".env", override=False)
@@ -33,10 +34,15 @@ class Settings:
 
     wecom_webhook_url: str = os.getenv("WECOM_WEBHOOK_URL") or ""
 
-    tencent_docs_app_id: str = os.getenv("TENCENT_DOCS_APP_ID") or ""
+    tencent_docs_client_id: str = (
+        os.getenv("TENCENT_DOCS_CLIENT_ID") or os.getenv("TENCENT_DOCS_APP_ID") or ""
+    )
+    tencent_docs_access_token: str = os.getenv("TENCENT_DOCS_ACCESS_TOKEN") or ""
+    tencent_docs_open_id: str = os.getenv("TENCENT_DOCS_OPEN_ID") or ""
     tencent_docs_app_secret: str = os.getenv("TENCENT_DOCS_APP_SECRET") or ""
     tencent_docs_file_id: str = os.getenv("TENCENT_DOCS_FILE_ID") or ""
     tencent_docs_sheet_id: str = os.getenv("TENCENT_DOCS_SHEET_ID") or ""
+    tencent_docs_title: str = os.getenv("TENCENT_DOCS_TITLE") or "RecruitFlow AI 候选人台账"
 
     daily_summary_hour: int = _env_int("DAILY_SUMMARY_HOUR", 9)
     daily_summary_minute: int = _env_int("DAILY_SUMMARY_MINUTE", 0)
@@ -48,13 +54,10 @@ class Settings:
 
     @property
     def tencent_docs_configured(self) -> bool:
-        return all(
-            [
-                self.tencent_docs_app_id,
-                self.tencent_docs_app_secret,
-                self.tencent_docs_file_id,
-                self.tencent_docs_sheet_id,
-            ]
+        return bool(
+            self.tencent_docs_client_id
+            and self.tencent_docs_access_token
+            and self.tencent_docs_open_id
         )
 
     @property

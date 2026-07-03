@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import csv
+import json
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
-from ..config import MOCK_TENCENT_DOCS_CSV, settings
+import requests
+
+from ..config import MOCK_TENCENT_DOCS_CSV, TENCENT_DOCS_STATE_JSON, settings
 from ..models import Application, Candidate
 
 
@@ -36,9 +38,12 @@ FIELDNAMES = [
 
 
 class TencentDocsClient:
+    base_url = "https://docs.qq.com"
+
     def __init__(self) -> None:
         self.real_mode = settings.tencent_docs_configured
         self.csv_path = MOCK_TENCENT_DOCS_CSV
+        self.state_path = TENCENT_DOCS_STATE_JSON
 
     def add_or_update_application(self, candidate: Candidate, application: Application) -> str:
         """
@@ -75,16 +80,189 @@ class TencentDocsClient:
             self._write_rows(rows)
 
     def _add_or_update_real(self, candidate: Candidate, application: Application) -> str:
-        # TODO: 接入腾讯文档开放平台授权、表格行新增和更新接口。
-        print(
-            "[TencentDocsClient] Real mode placeholder. "
-            f"candidate_id={candidate.id}, application_id={application.id}"
-        )
-        return application.tencent_record_id or f"tencent-placeholder-{application.id}"
+        book_id, sheet_id, state = self._ensure_real_sheet()
+        rows = state.setdefault("rows", {})
+        app_key = str(application.id)
+
+        row_number = self._row_number_from_record_id(application.tencent_record_id)
+        if row_number is None and app_key in rows:
+            row_number = int(rows[app_key])
+        if row_number is None:
+            row_number = int(state.get("next_row") or 2)
+
+        row = self._to_row(f"row-{row_number}", candidate, application)
+        values = [[row.get(field, "") for field in FIELDNAMES]]
+        end_column = self._column_name(len(FIELDNAMES))
+        self._update_values(book_id, f"{sheet_id}!A{row_number}:{end_column}{row_number}", values)
+
+        rows[app_key] = row_number
+        state["next_row"] = max(int(state.get("next_row") or 2), row_number + 1)
+        self._write_state(state)
+        return f"row-{row_number}"
 
     def _update_reminder_status_real(self, application_id: int, fields: dict) -> None:
-        # TODO: 接入腾讯文档开放平台后，将提醒状态同步到对应记录。
-        print(f"[TencentDocsClient] Real mode reminder placeholder. {application_id=} {fields=}")
+        book_id, sheet_id, state = self._ensure_real_sheet()
+        row_number = state.get("rows", {}).get(str(application_id))
+        if not row_number:
+            return
+
+        update_fields = dict(fields)
+        update_fields["updated_at"] = datetime.now()
+        for field, value in update_fields.items():
+            if field not in FIELDNAMES:
+                continue
+            column = self._column_name(FIELDNAMES.index(field) + 1)
+            self._update_values(
+                book_id,
+                f"{sheet_id}!{column}{row_number}:{column}{row_number}",
+                [[self._serialize(value)]],
+            )
+
+    def _ensure_real_sheet(self) -> tuple[str, str, dict[str, Any]]:
+        state = self._read_state()
+        book_id = settings.tencent_docs_file_id or state.get("book_id")
+        sheet_id = settings.tencent_docs_sheet_id or state.get("sheet_id")
+
+        if not book_id:
+            created = self._create_sheet_file()
+            book_id = created["ID"]
+            state["book_id"] = book_id
+            state["url"] = created.get("url", "")
+            state["title"] = created.get("title", settings.tencent_docs_title)
+
+        if not sheet_id:
+            sheet_id = self._create_recruit_sheet(book_id)
+            if not sheet_id:
+                sheet_id = self._first_sheet_id(book_id)
+            state["sheet_id"] = sheet_id
+
+        if not state.get("header_initialized"):
+            self._write_header(book_id, sheet_id)
+            state["header_initialized"] = True
+            state["next_row"] = max(int(state.get("next_row") or 2), 2)
+
+        self._write_state(state)
+        return book_id, sheet_id, state
+
+    def _create_sheet_file(self) -> dict[str, Any]:
+        payload = self._request(
+            "POST",
+            "/openapi/drive/v2/files",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={"type": "sheet", "title": settings.tencent_docs_title[:36]},
+        )
+        return payload["data"]
+
+    def _create_recruit_sheet(self, book_id: str) -> str | None:
+        try:
+            payload = self._request(
+                "POST",
+                f"/openapi/sheetbook/v2/{book_id}:batchUpdate",
+                headers={"Content-Type": "application/json"},
+                json={
+                    "addSheet": {
+                        "properties": {
+                            "title": "招聘台账",
+                            "index": 0,
+                            "gridProperties": {
+                                "rowCount": 2000,
+                                "columnCount": len(FIELDNAMES),
+                            },
+                        }
+                    }
+                },
+            )
+        except Exception as exc:
+            print(f"[TencentDocsClient] create sheet tab failed, fallback to first sheet: {exc}")
+            return None
+        return (
+            payload.get("data", {})
+            .get("addSheet", {})
+            .get("properties", {})
+            .get("sheetID")
+        )
+
+    def _first_sheet_id(self, book_id: str) -> str:
+        payload = self._request("GET", f"/openapi/sheetbook/v2/{book_id}/sheets-info")
+        sheets = payload.get("data", {}).get("getSheet") or []
+        if not sheets:
+            raise RuntimeError("腾讯文档表格没有可写入的工作表。")
+        return sheets[0]["sheetID"]
+
+    def _write_header(self, book_id: str, sheet_id: str) -> None:
+        end_column = self._column_name(len(FIELDNAMES))
+        self._update_values(book_id, f"{sheet_id}!A1:{end_column}1", [FIELDNAMES])
+
+    def _update_values(self, book_id: str, range_name: str, values: list[list[str]]) -> None:
+        self._request(
+            "PUT",
+            f"/openapi/sheetbook/v2/{book_id}/values/{range_name}",
+            headers={"Content-Type": "application/json"},
+            json={"values": values},
+        )
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        headers: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        request_headers = self._auth_headers()
+        request_headers.update(headers or {})
+        response = requests.request(
+            method,
+            f"{self.base_url}{path}",
+            headers=request_headers,
+            timeout=20,
+            **kwargs,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("ret", 0) != 0:
+            raise RuntimeError(f"腾讯文档 API 调用失败：{payload}")
+        return payload
+
+    def _auth_headers(self) -> dict[str, str]:
+        return {
+            "Access-Token": settings.tencent_docs_access_token,
+            "Client-Id": settings.tencent_docs_client_id,
+            "Open-Id": settings.tencent_docs_open_id,
+        }
+
+    def _read_state(self) -> dict[str, Any]:
+        if not self.state_path.exists():
+            return {"rows": {}, "next_row": 2}
+        try:
+            with self.state_path.open("r", encoding="utf-8") as file:
+                state = json.load(file)
+        except (json.JSONDecodeError, OSError):
+            return {"rows": {}, "next_row": 2}
+        state.setdefault("rows", {})
+        state.setdefault("next_row", 2)
+        return state
+
+    def _write_state(self, state: dict[str, Any]) -> None:
+        self.state_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.state_path.open("w", encoding="utf-8") as file:
+            json.dump(state, file, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _row_number_from_record_id(record_id: str | None) -> int | None:
+        if not record_id or not record_id.startswith("row-"):
+            return None
+        try:
+            return int(record_id.split("-", 1)[1])
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _column_name(index: int) -> str:
+        chars: list[str] = []
+        while index:
+            index, remainder = divmod(index - 1, 26)
+            chars.append(chr(65 + remainder))
+        return "".join(reversed(chars))
 
     def _upsert_mock_row(
         self, record_id: str, candidate: Candidate, application: Application

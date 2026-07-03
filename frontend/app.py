@@ -473,7 +473,7 @@ def page_candidate_list() -> None:
             }
             updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
             if updated:
-                st.success("更新成功，并已同步腾讯文档 mock。")
+                st.success("更新成功，并已同步腾讯文档。")
                 st.rerun()
 
 
