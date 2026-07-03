@@ -721,7 +721,6 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                     )
                 interview_time_value = datetime.combine(interview_date, interview_clock).isoformat()
 
-            next_action = st.text_input("下一步动作", value="", key=f"{prefix}_next_action")
             notes = st.text_area("备注", value="", height=100, key=f"{prefix}_notes")
 
             submitted = st.form_submit_button("确认保存并同步腾讯文档", type="primary")
@@ -754,7 +753,7 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                             "interviewer": none_if_blank(interviewer_value),
                             "interview_time": interview_time_value,
                             "interview_round": None,
-                            "next_action": none_if_blank(next_action),
+                            "next_action": None,
                             "hr_decision": hr_decision,
                             "notes": none_if_blank(notes),
                         },
@@ -856,7 +855,6 @@ def page_candidate_list() -> None:
         "interview_time",
         "interviewer",
         "owner_hr",
-        "next_action",
         "updated_at",
     ]
     st.dataframe(
@@ -873,7 +871,6 @@ def page_candidate_list() -> None:
                 "interview_time": "面试时间",
                 "interviewer": "面试官",
                 "owner_hr": "负责 HR",
-                "next_action": "下一步动作",
                 "updated_at": "更新时间",
             }
         ),
@@ -940,7 +937,6 @@ def page_candidate_list() -> None:
                 new_date = None
                 new_time = None
 
-        new_next_action = st.text_input("下一步动作", value=selected.get("next_action") or "")
         new_notes = st.text_area("备注", value=selected.get("notes") or "", height=100)
         submitted = st.form_submit_button("保存更新", type="primary")
         if submitted:
@@ -959,7 +955,7 @@ def page_candidate_list() -> None:
                 "interviewer": none_if_blank(new_interviewer),
                 "owner_hr": new_owner_hr.strip(),
                 "interview_round": None,
-                "next_action": none_if_blank(new_next_action),
+                "next_action": None,
                 "hr_decision": new_hr_decision,
                 "notes": none_if_blank(new_notes),
             }
