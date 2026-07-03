@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import base64
 import hashlib
+import html
 import os
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -33,6 +35,47 @@ RECRUIT_STAGES = [
 
 APPLICATION_STATUS = ["进行中", "已通过", "已淘汰", "已放弃", "人才库"]
 HR_DECISIONS = ["待决定", "推进下一轮", "暂不推进", "发Offer", "淘汰", "进入人才库"]
+
+SCHOOL_CITY_HINTS = {
+    "西安": "西安",
+    "北京": "北京",
+    "上海": "上海",
+    "天津": "天津",
+    "重庆": "重庆",
+    "南京": "南京",
+    "杭州": "杭州",
+    "广州": "广州",
+    "深圳": "深圳",
+    "成都": "成都",
+    "武汉": "武汉",
+    "长沙": "长沙",
+    "郑州": "郑州",
+    "济南": "济南",
+    "青岛": "青岛",
+    "合肥": "合肥",
+    "南昌": "南昌",
+    "福州": "福州",
+    "厦门": "厦门",
+    "哈尔滨": "哈尔滨",
+    "长春": "长春",
+    "沈阳": "沈阳",
+    "大连": "大连",
+    "太原": "太原",
+    "石家庄": "石家庄",
+    "呼和浩特": "呼和浩特",
+    "兰州": "兰州",
+    "银川": "银川",
+    "西宁": "西宁",
+    "乌鲁木齐": "乌鲁木齐",
+    "昆明": "昆明",
+    "贵阳": "贵阳",
+    "南宁": "南宁",
+    "海口": "海口",
+    "苏州": "苏州",
+    "无锡": "无锡",
+    "宁波": "宁波",
+    "珠海": "珠海",
+}
 
 
 def api_url(path: str) -> str:
@@ -65,6 +108,37 @@ def parse_datetime(value: str | None) -> datetime | None:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
     except ValueError:
         return None
+
+
+def infer_city_from_school(school: str | None) -> str:
+    if not school:
+        return ""
+    for keyword, city in SCHOOL_CITY_HINTS.items():
+        if keyword in school:
+            return city
+    return ""
+
+
+def render_pdf_preview(pdf_bytes: bytes | None, file_name: str) -> None:
+    if not pdf_bytes:
+        return
+    encoded = base64.b64encode(pdf_bytes).decode("ascii")
+    safe_file_name = html.escape(file_name)
+    components.html(
+        f"""
+        <div style="border:1px solid #d7dce2;border-radius:6px;overflow:hidden;background:#fff;">
+          <div style="padding:10px 12px;font:14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                      border-bottom:1px solid #edf0f4;color:#323743;">
+            {safe_file_name}
+          </div>
+          <iframe
+            src="data:application/pdf;base64,{encoded}#toolbar=1&navpanes=0"
+            style="width:100%;height:620px;border:0;"
+          ></iframe>
+        </div>
+        """,
+        height=680,
+    )
 
 
 def fetch_candidates(params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -137,6 +211,7 @@ def parse_uploaded_resumes(uploaded_files: list[Any]) -> None:
     status = st.empty()
     total = len(pending_files)
     for index, (file_key, uploaded_file, content) in enumerate(pending_files, start=1):
+        progress.progress((index - 1) / total)
         status.info(f"正在解析 {index}/{total}：{uploaded_file.name}")
         files = {"file": (uploaded_file.name, content, "application/pdf")}
         try:
@@ -147,6 +222,7 @@ def parse_uploaded_resumes(uploaded_files: list[Any]) -> None:
             if response.ok:
                 result = response.json()
                 result["uploaded_name"] = uploaded_file.name
+                result["uploaded_pdf_bytes"] = content
                 parsed_resumes[file_key] = result
             else:
                 try:
@@ -163,6 +239,9 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
     file_name = result.get("uploaded_name") or Path(result.get("file_path", "简历")).name
 
     with st.expander(f"{file_name}｜解析结果确认", expanded=True):
+        st.subheader("上传简历")
+        render_pdf_preview(result.get("uploaded_pdf_bytes"), file_name)
+        st.subheader("解析结果确认")
         st.caption(
             f"解析模式：{result.get('parser_mode', 'unknown')}｜"
             f"置信度：{parsed.get('confidence', 0):.2f}"
@@ -185,12 +264,8 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                 degree = st.text_input("学历", value=parsed.get("degree") or "", key=f"{prefix}_degree")
                 major = st.text_input("专业", value=parsed.get("major") or "", key=f"{prefix}_major")
             with col3:
-                graduation_year = st.text_input(
-                    "毕业年份",
-                    value=parsed.get("graduation_year") or "",
-                    key=f"{prefix}_graduation_year",
-                )
-                city = st.text_input("所在城市", value=parsed.get("city") or "", key=f"{prefix}_city")
+                default_city = parsed.get("city") or infer_city_from_school(parsed.get("school"))
+                city = st.text_input("所在城市", value=default_city, key=f"{prefix}_city")
                 skills_text = st.text_input(
                     "技能标签",
                     value=", ".join(parsed.get("skills") or []),
@@ -226,7 +301,6 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                 hr_decision = st.selectbox(
                     "HR 决策", HR_DECISIONS, index=0, key=f"{prefix}_hr_decision"
                 )
-                interview_round = st.text_input("面试轮次", value="", key=f"{prefix}_round")
             with col6:
                 owner_hr = st.text_input("负责 HR", value="", key=f"{prefix}_owner_hr")
                 interviewer = st.text_input("面试官", value="", key=f"{prefix}_interviewer")
@@ -265,7 +339,7 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                             "school": none_if_blank(school),
                             "degree": none_if_blank(degree),
                             "major": none_if_blank(major),
-                            "graduation_year": none_if_blank(graduation_year),
+                            "graduation_year": None,
                             "city": none_if_blank(city),
                             "skills": split_skills(skills_text),
                             "resume_summary": none_if_blank(resume_summary),
@@ -281,7 +355,7 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                             "owner_hr": owner_hr.strip(),
                             "interviewer": none_if_blank(interviewer),
                             "interview_time": interview_time_value,
-                            "interview_round": none_if_blank(interview_round),
+                            "interview_round": None,
                             "next_action": none_if_blank(next_action),
                             "hr_decision": hr_decision,
                             "notes": none_if_blank(notes),
@@ -336,13 +410,15 @@ def page_upload_resume() -> None:
     if not parsed_resumes:
         return
 
-    st.subheader("解析结果确认")
+    st.subheader("已上传简历")
     for index, (result_key, result) in enumerate(parsed_resumes.items(), start=1):
         prefix = f"resume_{index}_{hashlib.sha256(result_key.encode()).hexdigest()[:12]}"
         render_resume_confirm_form(result, result_key, prefix)
 
 
 def page_candidate_list() -> None:
+    import pandas as pd
+
     st.title("候选人列表")
     filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
     with filter_col1:
@@ -440,7 +516,6 @@ def page_candidate_list() -> None:
         with edit_col2:
             new_interviewer = st.text_input("面试官", value=selected.get("interviewer") or "")
             new_owner_hr = st.text_input("负责 HR", value=selected.get("owner_hr") or "")
-            new_round = st.text_input("面试轮次", value=selected.get("interview_round") or "")
         with edit_col3:
             current_dt = parse_datetime(selected.get("interview_time"))
             set_interview_time = st.checkbox("设置面试时间", value=current_dt is not None)
@@ -470,7 +545,7 @@ def page_candidate_list() -> None:
                 "interview_time": interview_time_value,
                 "interviewer": none_if_blank(new_interviewer),
                 "owner_hr": none_if_blank(new_owner_hr),
-                "interview_round": none_if_blank(new_round),
+                "interview_round": None,
                 "next_action": none_if_blank(new_next_action),
                 "hr_decision": new_hr_decision,
                 "notes": none_if_blank(new_notes),
@@ -482,6 +557,8 @@ def page_candidate_list() -> None:
 
 
 def page_dashboard() -> None:
+    import pandas as pd
+
     st.title("招聘看板")
     try:
         response = requests.get(api_url("/api/dashboard/summary"), timeout=20)
@@ -522,12 +599,11 @@ def page_dashboard() -> None:
         today_df = pd.DataFrame(today_list)
         st.dataframe(
             today_df[
-                ["name", "position", "interview_round", "interview_time", "interviewer", "owner_hr"]
+                ["name", "position", "interview_time", "interviewer", "owner_hr"]
             ].rename(
                 columns={
                     "name": "姓名",
                     "position": "岗位",
-                    "interview_round": "轮次",
                     "interview_time": "面试时间",
                     "interviewer": "面试官",
                     "owner_hr": "负责 HR",
