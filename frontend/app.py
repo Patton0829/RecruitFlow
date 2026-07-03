@@ -143,19 +143,41 @@ p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
     color: rgba(255, 255, 255, 0.76);
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
-    min-height: 2.65rem;
+[data-testid="stSidebar"] [role="radiogroup"] {
+    gap: 0.2rem;
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] span {
-    color: #ffffff !important;
-    font-weight: 650;
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    min-height: 2.25rem;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] svg {
-    color: rgba(255, 255, 255, 0.72);
+[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {
+    display: none;
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label [data-testid="stMarkdownContainer"] p {
+    margin: 0;
+    padding: 0.4rem 0 0.4rem 0.85rem;
+    border-left: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.92rem;
+    font-weight: 620;
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label:hover [data-testid="stMarkdownContainer"] p {
+    color: #ffffff;
+    border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) [data-testid="stMarkdownContainer"] p {
+    color: #ffffff;
+    border-left-color: var(--rf-accent);
+    font-weight: 760;
 }
 
 [data-testid="stFileUploader"] section {
@@ -344,7 +366,7 @@ def render_sidebar() -> str:
         """,
         unsafe_allow_html=True,
     )
-    module = st.sidebar.selectbox(
+    module = st.sidebar.radio(
         "功能模块",
         MODULE_OPTIONS,
         format_func=lambda value: f"{value} ｜ {MODULE_PAGES[value]}",
