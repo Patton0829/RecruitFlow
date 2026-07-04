@@ -1394,6 +1394,10 @@ def page_candidate_list() -> None:
     )
 
     st.subheader("编辑招聘流程")
+    editor_flash = st.session_state.pop("candidate_editor_flash", None)
+    if editor_flash:
+        st.success(editor_flash)
+
     options = {
         f"#{row['application_id']}｜{row.get('name') or '候选人'}｜{row['position']}｜{row['stage']}": row
         for row in data
@@ -1484,7 +1488,7 @@ def page_candidate_list() -> None:
         height=100,
         key=f"{edit_key}_notes",
     )
-    if st.button("保存更新", type="primary", key=f"{edit_key}_save"):
+    if st.button("保存并同步腾讯文档", type="primary", key=f"{edit_key}_save"):
         if not new_owner_hr.strip():
             st.error("负责 HR 必填。")
             return
@@ -1507,9 +1511,13 @@ def page_candidate_list() -> None:
             "hr_decision": new_hr_decision,
             "notes": none_if_blank(new_notes),
         }
-        updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
+        with st.spinner("正在保存更新，并同步腾讯文档..."):
+            updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
         if updated:
-            st.success("更新成功，并已同步腾讯文档。")
+            candidate_name = selected.get("name") or "候选人"
+            st.session_state["candidate_editor_flash"] = (
+                f"已保存：{candidate_name} 已更新为 {updated['stage']}，腾讯文档已同步。"
+            )
             st.rerun()
 
 
