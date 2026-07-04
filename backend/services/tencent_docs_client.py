@@ -129,7 +129,8 @@ class TencentDocsClient:
     def _ensure_real_sheet(self) -> tuple[str, str, dict[str, Any]]:
         state = self._read_state()
         book_id = settings.tencent_docs_file_id or state.get("book_id")
-        sheet_id = settings.tencent_docs_sheet_id or state.get("sheet_id")
+        explicit_sheet_id = settings.tencent_docs_sheet_id
+        sheet_id = explicit_sheet_id or state.get("sheet_id")
 
         if not book_id:
             created = self._create_sheet_file()
@@ -140,10 +141,18 @@ class TencentDocsClient:
         elif settings.tencent_docs_url:
             state["url"] = settings.tencent_docs_url
 
-        if not sheet_id:
-            sheet_id = self._create_recruit_sheet(book_id)
-            if not sheet_id:
-                sheet_id = self._first_sheet_id(book_id)
+        if explicit_sheet_id:
+            state["sheet_id"] = explicit_sheet_id
+        else:
+            first_sheet_id = self._first_sheet_id(book_id)
+            if sheet_id != first_sheet_id:
+                sheet_id = first_sheet_id
+                state["sheet_id"] = sheet_id
+                state["header_initialized"] = False
+                state["rows"] = {}
+                state["next_row"] = 2
+            elif not sheet_id:
+                sheet_id = first_sheet_id
             state["sheet_id"] = sheet_id
 
         if not state.get("header_initialized"):
@@ -194,7 +203,8 @@ class TencentDocsClient:
 
     def _first_sheet_id(self, book_id: str) -> str:
         payload = self._request("GET", f"/openapi/sheetbook/v2/{book_id}/sheets-info")
-        sheets = payload.get("data", {}).get("getSheet") or []
+        data = payload.get("data", {})
+        sheets = data.get("sheetData") or data.get("getSheet") or []
         if not sheets:
             raise RuntimeError("腾讯文档表格没有可写入的工作表。")
         return sheets[0]["sheetID"]
