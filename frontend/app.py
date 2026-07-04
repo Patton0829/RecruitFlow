@@ -1272,12 +1272,10 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
                     response = post_json("/api/candidates/confirm", payload)
                     if response:
                         st.session_state[f"save_response_{result_key}"] = response
-                        st.success(
-                            "保存成功："
-                            f"candidate_id={response['candidate_id']}，"
-                            f"application_id={response['application_id']}，"
-                            f"同步腾讯文档={response['synced_to_tencent_docs']}"
-                        )
+                        if response.get("updated_existing_application"):
+                            st.success("已更新已有候选人记录，并同步腾讯文档。")
+                        else:
+                            st.success("保存成功，并同步腾讯文档。")
                         if response.get("matched_existing"):
                             st.info(f"已关联已有候选人，匹配方式：{response.get('match_type')}")
                         if response.get("tencent_docs_url"):
@@ -1285,11 +1283,10 @@ def render_resume_confirm_form(result: dict[str, Any], result_key: str, prefix: 
 
         saved_response = st.session_state.get(f"save_response_{result_key}")
         if saved_response:
-            st.info(
-                "已保存："
-                f"candidate_id={saved_response['candidate_id']}，"
-                f"application_id={saved_response['application_id']}"
-            )
+            if saved_response.get("updated_existing_application"):
+                st.info("已更新已有候选人记录。")
+            else:
+                st.info("已保存候选人记录。")
             if saved_response.get("tencent_docs_url"):
                 st.link_button("打开腾讯文档表格", saved_response["tencent_docs_url"])
 

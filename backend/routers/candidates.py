@@ -38,8 +38,13 @@ def confirm_candidate(payload: ConfirmCandidateRequest, db: Session = Depends(ge
         db.add(candidate)
         db.flush()
 
-    application = Application(candidate_id=candidate.id, **application_input.model_dump())
-    db.add(application)
+    application = _find_existing_application(db, candidate)
+    updated_existing_application = application is not None
+    if application:
+        _update_application(application, application_input.model_dump())
+    else:
+        application = Application(candidate_id=candidate.id, **application_input.model_dump())
+        db.add(application)
     db.flush()
 
     synced = False
@@ -63,6 +68,7 @@ def confirm_candidate(payload: ConfirmCandidateRequest, db: Session = Depends(ge
         application_id=application.id,
         matched_existing=matched_existing,
         match_type=match_type,
+        updated_existing_application=updated_existing_application,
         synced_to_tencent_docs=synced,
         tencent_docs_url=tencent_docs_url,
     )
@@ -128,6 +134,20 @@ def _update_candidate(candidate: Candidate, values: dict) -> None:
     candidate.skills_json = json.dumps(skills or [], ensure_ascii=False)
     for key, value in values.items():
         setattr(candidate, key, value)
+
+
+def _find_existing_application(db: Session, candidate: Candidate) -> Application | None:
+    return db.scalar(
+        select(Application)
+        .where(Application.candidate_id == candidate.id)
+        .order_by(Application.updated_at.desc(), Application.id.desc())
+        .limit(1)
+    )
+
+
+def _update_application(application: Application, values: dict) -> None:
+    for key, value in values.items():
+        setattr(application, key, value)
 
 
 def _skills(candidate: Candidate) -> list[str]:
