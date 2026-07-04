@@ -1405,6 +1405,12 @@ def page_candidate_list() -> None:
         f"edit_{selected['application_id']}_"
         f"{hashlib.sha256(str(selected.get('updated_at')).encode()).hexdigest()[:8]}"
     )
+    stage_key = f"{edit_key}_stage"
+    decision_key = f"{edit_key}_hr_decision"
+    current_decision = st.session_state.get(decision_key, selected.get("hr_decision") or "待决定")
+    if selected["stage"] == "一轮面试" and current_decision == "推进下一轮":
+        st.session_state[stage_key] = "二轮面试"
+
     edit_col1, edit_col2, edit_col3 = st.columns(3)
     with edit_col1:
         new_stage = st.selectbox(
@@ -1413,7 +1419,7 @@ def page_candidate_list() -> None:
             index=FLOW_STAGE_OPTIONS.index(selected["stage"])
             if selected["stage"] in FLOW_STAGE_OPTIONS
             else 0,
-            key=f"{edit_key}_stage",
+            key=stage_key,
         )
         new_status = st.selectbox(
             "状态",
@@ -1429,12 +1435,12 @@ def page_candidate_list() -> None:
             index=HR_DECISIONS.index(selected.get("hr_decision"))
             if selected.get("hr_decision") in HR_DECISIONS
             else 0,
-            key=f"{edit_key}_hr_decision",
+            key=decision_key,
         )
 
-    target_stage = target_stage_for_decision(new_stage, new_hr_decision)
+    is_next_round = selected["stage"] == "一轮面试" and new_hr_decision == "推进下一轮"
+    target_stage = "二轮面试" if is_next_round else target_stage_for_decision(new_stage, new_hr_decision)
     scheduling_stage = target_stage if target_stage in {"一轮面试", "二轮面试"} else None
-    is_next_round = target_stage != new_stage
     people_stage_prefix = "二轮" if is_next_round and target_stage == "二轮面试" else ""
 
     with edit_col2:
