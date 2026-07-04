@@ -945,6 +945,12 @@ def parse_datetime(value: str | None) -> datetime | None:
         return None
 
 
+def target_stage_for_decision(stage: str, hr_decision: str) -> str:
+    if stage == "一轮面试" and hr_decision == "推进下一轮":
+        return "二轮面试"
+    return stage
+
+
 def infer_city_from_school(school: str | None) -> str:
     if not school:
         return ""
@@ -1395,83 +1401,110 @@ def page_candidate_list() -> None:
     selected_label = st.selectbox("选择记录", list(options.keys()))
     selected = options[selected_label]
 
-    with st.form("edit_application_form"):
-        edit_col1, edit_col2, edit_col3 = st.columns(3)
-        with edit_col1:
-            new_stage = st.selectbox(
-                "阶段",
-                FLOW_STAGE_OPTIONS,
-                index=FLOW_STAGE_OPTIONS.index(selected["stage"])
-                if selected["stage"] in FLOW_STAGE_OPTIONS
-                else 0,
-            )
-            new_status = st.selectbox(
-                "状态",
-                APPLICATION_STATUS,
-                index=APPLICATION_STATUS.index(selected["status"])
-                if selected["status"] in APPLICATION_STATUS
-                else 0,
-            )
-            new_hr_decision = st.selectbox(
-                "HR 决策",
-                HR_DECISIONS,
-                index=HR_DECISIONS.index(selected.get("hr_decision"))
-                if selected.get("hr_decision") in HR_DECISIONS
-                else 0,
-            )
-        with edit_col2:
-            new_owner_hr = people_multiselect(
-                "负责 HR",
-                HR_OPTIONS,
-                selected.get("owner_hr"),
-                f"edit_{selected['application_id']}_owner_hr",
-            )
-            new_interviewer = people_multiselect(
-                "面试官",
-                INTERVIEWER_OPTIONS,
-                selected.get("interviewer"),
-                f"edit_{selected['application_id']}_interviewer",
-            )
-        with edit_col3:
-            current_dt = parse_datetime(selected.get("interview_time"))
-            if new_stage in {"一轮面试", "二轮面试"}:
-                st.markdown(f"**预约{new_stage}时间**")
-                new_date = st.date_input(
-                    "预约日期", value=current_dt.date() if current_dt else date.today()
-                )
-                new_time = st.time_input(
-                    "预约时间", value=current_dt.time() if current_dt else time(hour=10)
-                )
-            else:
-                new_date = None
-                new_time = None
+    edit_key = (
+        f"edit_{selected['application_id']}_"
+        f"{hashlib.sha256(str(selected.get('updated_at')).encode()).hexdigest()[:8]}"
+    )
+    edit_col1, edit_col2, edit_col3 = st.columns(3)
+    with edit_col1:
+        new_stage = st.selectbox(
+            "阶段",
+            FLOW_STAGE_OPTIONS,
+            index=FLOW_STAGE_OPTIONS.index(selected["stage"])
+            if selected["stage"] in FLOW_STAGE_OPTIONS
+            else 0,
+            key=f"{edit_key}_stage",
+        )
+        new_status = st.selectbox(
+            "状态",
+            APPLICATION_STATUS,
+            index=APPLICATION_STATUS.index(selected["status"])
+            if selected["status"] in APPLICATION_STATUS
+            else 0,
+            key=f"{edit_key}_status",
+        )
+        new_hr_decision = st.selectbox(
+            "HR 决策",
+            HR_DECISIONS,
+            index=HR_DECISIONS.index(selected.get("hr_decision"))
+            if selected.get("hr_decision") in HR_DECISIONS
+            else 0,
+            key=f"{edit_key}_hr_decision",
+        )
 
-        new_notes = st.text_area("备注", value=selected.get("notes") or "", height=100)
-        submitted = st.form_submit_button("保存更新", type="primary")
-        if submitted:
-            if not new_owner_hr.strip():
-                st.error("负责 HR 必填。")
-                return
-            interview_time_value = (
-                datetime.combine(new_date, new_time).isoformat()
-                if new_stage in {"一轮面试", "二轮面试"} and new_date and new_time
-                else None
+    target_stage = target_stage_for_decision(new_stage, new_hr_decision)
+    scheduling_stage = target_stage if target_stage in {"一轮面试", "二轮面试"} else None
+    is_next_round = target_stage != new_stage
+    people_stage_prefix = "二轮" if is_next_round and target_stage == "二轮面试" else ""
+
+    with edit_col2:
+        new_owner_hr = people_multiselect(
+            f"{people_stage_prefix}负责 HR" if people_stage_prefix else "负责 HR",
+            HR_OPTIONS,
+            selected.get("owner_hr"),
+            f"{edit_key}_owner_hr",
+        )
+        new_interviewer = people_multiselect(
+            f"{people_stage_prefix}面试官" if people_stage_prefix else "面试官",
+            INTERVIEWER_OPTIONS,
+            selected.get("interviewer"),
+            f"{edit_key}_interviewer",
+        )
+    with edit_col3:
+        current_dt = parse_datetime(selected.get("interview_time"))
+        default_dt = current_dt if not is_next_round else None
+        if scheduling_stage:
+            st.markdown(f"**预约{scheduling_stage}时间**")
+            new_date = st.date_input(
+                "预约日期",
+                value=default_dt.date() if default_dt else date.today(),
+                key=f"{edit_key}_date",
             )
-            payload = {
-                "stage": new_stage,
-                "status": new_status,
-                "interview_time": interview_time_value,
-                "interviewer": none_if_blank(new_interviewer),
-                "owner_hr": new_owner_hr.strip(),
-                "interview_round": None,
-                "next_action": None,
-                "hr_decision": new_hr_decision,
-                "notes": none_if_blank(new_notes),
-            }
-            updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
-            if updated:
-                st.success("更新成功，并已同步腾讯文档。")
-                st.rerun()
+            new_time = st.time_input(
+                "预约时间",
+                value=default_dt.time() if default_dt else time(hour=10),
+                key=f"{edit_key}_time",
+            )
+        else:
+            new_date = None
+            new_time = None
+
+    if is_next_round:
+        st.info(f"保存后当前阶段将更新为：{target_stage}")
+
+    new_notes = st.text_area(
+        "备注",
+        value=selected.get("notes") or "",
+        height=100,
+        key=f"{edit_key}_notes",
+    )
+    if st.button("保存更新", type="primary", key=f"{edit_key}_save"):
+        if not new_owner_hr.strip():
+            st.error("负责 HR 必填。")
+            return
+        if is_next_round and not new_interviewer.strip():
+            st.error("推进下一轮时需要选择二轮面试官。")
+            return
+        interview_time_value = (
+            datetime.combine(new_date, new_time).isoformat()
+            if scheduling_stage and new_date and new_time
+            else None
+        )
+        payload = {
+            "stage": target_stage,
+            "status": new_status,
+            "interview_time": interview_time_value,
+            "interviewer": none_if_blank(new_interviewer),
+            "owner_hr": new_owner_hr.strip(),
+            "interview_round": None,
+            "next_action": None,
+            "hr_decision": new_hr_decision,
+            "notes": none_if_blank(new_notes),
+        }
+        updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
+        if updated:
+            st.success("更新成功，并已同步腾讯文档。")
+            st.rerun()
 
 
 def page_dashboard() -> None:
