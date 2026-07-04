@@ -1482,6 +1482,21 @@ def page_candidate_list() -> None:
     if is_next_round:
         st.info(f"保存后当前阶段将更新为：{target_stage}")
 
+    existing_feedbacks = selected.get("interviewer_feedbacks") or {}
+    feedback_people = unique_people(
+        [*split_people(selected.get("interviewer")), *split_people(new_interviewer)]
+    )
+    interviewer_feedbacks = dict(existing_feedbacks)
+    if feedback_people:
+        st.markdown("**面试官意见**")
+        for person in feedback_people:
+            interviewer_feedbacks[person] = st.text_area(
+                f"{person} 的面试意见",
+                value=existing_feedbacks.get(person, ""),
+                height=90,
+                key=f"{edit_key}_feedback_{hashlib.sha256(person.encode()).hexdigest()[:8]}",
+            )
+
     new_notes = st.text_area(
         "备注",
         value=selected.get("notes") or "",
@@ -1510,13 +1525,14 @@ def page_candidate_list() -> None:
             "next_action": None,
             "hr_decision": new_hr_decision,
             "notes": none_if_blank(new_notes),
+            "interviewer_feedbacks": interviewer_feedbacks,
         }
         with st.spinner("正在保存更新，并同步腾讯文档..."):
             updated = patch_json(f"/api/applications/{selected['application_id']}", payload)
         if updated:
             candidate_name = selected.get("name") or "候选人"
             st.session_state["candidate_editor_flash"] = (
-                f"已保存：{candidate_name} 已更新为 {updated['stage']}，腾讯文档已同步。"
+                f"已保存：{candidate_name} 已更新为 {updated['stage']}，面试官意见已保存，腾讯文档已同步。"
             )
             st.rerun()
 

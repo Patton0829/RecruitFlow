@@ -141,11 +141,25 @@ class ApplicationUpdate(BaseModel):
     next_action: str | None = None
     hr_decision: str | None = None
     notes: str | None = None
+    interviewer_feedbacks: dict[str, str] | None = None
 
     @field_validator("*", mode="before")
     @classmethod
     def blank_strings(cls, value: Any) -> Any:
         return _blank_to_none(value)
+
+    @field_validator("interviewer_feedbacks", mode="before")
+    @classmethod
+    def normalize_interviewer_feedbacks(cls, value: Any) -> dict[str, str] | None:
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(name).strip(): str(feedback).strip()
+            for name, feedback in value.items()
+            if str(name).strip()
+        }
 
 
 class CandidateApplicationOut(BaseModel):
@@ -175,6 +189,7 @@ class CandidateApplicationOut(BaseModel):
     next_action: str | None
     hr_decision: str | None
     notes: str | None
+    interviewer_feedbacks: dict[str, str]
     tencent_record_id: str | None
     last_synced_at: datetime | None
     updated_at: datetime

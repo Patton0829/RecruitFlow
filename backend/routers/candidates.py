@@ -114,8 +114,11 @@ def update_application(
         raise HTTPException(status_code=404, detail="招聘流程记录不存在。")
 
     updates = payload.model_dump(exclude_unset=True)
+    interviewer_feedbacks = updates.pop("interviewer_feedbacks", None)
     for key, value in updates.items():
         setattr(app, key, value)
+    if interviewer_feedbacks is not None:
+        app.interviewer_feedbacks_json = json.dumps(interviewer_feedbacks, ensure_ascii=False)
 
     try:
         client = TencentDocsClient()
@@ -160,6 +163,22 @@ def _skills(candidate: Candidate) -> list[str]:
         return []
 
 
+def _interviewer_feedbacks(app: Application) -> dict[str, str]:
+    if not app.interviewer_feedbacks_json:
+        return {}
+    try:
+        value = json.loads(app.interviewer_feedbacks_json)
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(value, dict):
+        return {}
+    return {
+        str(name): str(feedback)
+        for name, feedback in value.items()
+        if str(name).strip()
+    }
+
+
 def _to_flattened(app: Application) -> CandidateApplicationOut:
     candidate = app.candidate
     return CandidateApplicationOut(
@@ -187,6 +206,7 @@ def _to_flattened(app: Application) -> CandidateApplicationOut:
         next_action=app.next_action,
         hr_decision=app.hr_decision,
         notes=app.notes,
+        interviewer_feedbacks=_interviewer_feedbacks(app),
         tencent_record_id=app.tencent_record_id,
         last_synced_at=app.last_synced_at,
         updated_at=app.updated_at,

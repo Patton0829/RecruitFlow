@@ -61,6 +61,7 @@ class Application(TimestampMixin, Base):
     next_action: Mapped[str | None] = mapped_column(String(255), nullable=True)
     hr_decision: Mapped[str | None] = mapped_column(String(120), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    interviewer_feedbacks_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     tencent_record_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from .config import settings
@@ -40,3 +40,17 @@ def init_db() -> None:
     from . import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    _run_lightweight_migrations()
+
+
+def _run_lightweight_migrations() -> None:
+    inspector = inspect(engine)
+    if "applications" not in inspector.get_table_names():
+        return
+
+    application_columns = {column["name"] for column in inspector.get_columns("applications")}
+    if "interviewer_feedbacks_json" not in application_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE applications ADD COLUMN interviewer_feedbacks_json TEXT")
+            )
