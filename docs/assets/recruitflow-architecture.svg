@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">RecruitFlow AI 架构图</title>
+  <desc id="desc">面向 HR 的招聘流程提效系统架构图，展示简历上传、AI 解析、候选人档案、腾讯文档同步、面试官意见和企业微信提醒。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f9ff"/>
+      <stop offset="100%" stop-color="#eef7f6"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#13b8a6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#1f2937" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .title { font: 700 34px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #172033; }
+      .subtitle { font: 400 18px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #64748b; }
+      .section { font: 700 19px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #0f172a; }
+      .body { font: 400 15px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #475569; }
+      .small { font: 400 13px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #64748b; }
+      .pill { font: 700 13px "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #1d4ed8; }
+      .card { fill: #ffffff; stroke: #dbe5f0; stroke-width: 1.4; rx: 18; filter: url(#shadow); }
+      .soft { fill: #f8fafc; stroke: #e2e8f0; stroke-width: 1.2; rx: 14; }
+      .line { stroke: #64748b; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .iconCircle { fill: url(#accent); }
+      .iconText { font: 700 19px Arial, sans-serif; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="760" fill="url(#bg)"/>
+
+  <text x="64" y="70" class="title">RecruitFlow AI｜招聘流程提效助手</text>
+  <text x="64" y="104" class="subtitle">把简历处理、候选人台账、面试协同和群提醒串成一条清晰流程</text>
+
+  <rect x="62" y="142" width="230" height="144" class="card"/>
+  <circle cx="101" cy="185" r="24" class="iconCircle"/>
+  <text x="88" y="192" class="iconText">HR</text>
+  <text x="132" y="178" class="section">HR 工作台</text>
+  <text x="132" y="205" class="body">上传简历</text>
+  <text x="132" y="229" class="body">确认解析结果</text>
+  <text x="132" y="253" class="body">推进面试流程</text>
+
+  <rect x="370" y="142" width="230" height="144" class="card"/>
+  <circle cx="409" cy="185" r="24" class="iconCircle"/>
+  <text x="397" y="192" class="iconText">AI</text>
+  <text x="440" y="178" class="section">AI 简历解析</text>
+  <text x="440" y="205" class="body">自动读取 PDF</text>
+  <text x="440" y="229" class="body">提取候选人信息</text>
+  <text x="440" y="253" class="body">生成确认表单</text>
+
+  <rect x="678" y="142" width="250" height="144" class="card"/>
+  <circle cx="717" cy="185" r="24" class="iconCircle"/>
+  <text x="706" y="192" class="iconText">库</text>
+  <text x="748" y="178" class="section">候选人档案库</text>
+  <text x="748" y="205" class="body">候选人基础信息</text>
+  <text x="748" y="229" class="body">招聘流程状态</text>
+  <text x="748" y="253" class="body">自动去重更新</text>
+
+  <rect x="1006" y="142" width="210" height="144" class="card"/>
+  <circle cx="1045" cy="185" r="24" class="iconCircle"/>
+  <text x="1034" y="192" class="iconText">表</text>
+  <text x="1076" y="178" class="section">腾讯文档台账</text>
+  <text x="1076" y="205" class="body">共享候选人数据</text>
+  <text x="1076" y="229" class="body">更新同一条记录</text>
+  <text x="1076" y="253" class="body">HR 随时查看</text>
+
+  <path d="M 292 214 C 318 214, 340 214, 370 214" class="line"/>
+  <path d="M 600 214 C 624 214, 648 214, 678 214" class="line"/>
+  <path d="M 928 214 C 956 214, 978 214, 1006 214" class="line"/>
+
+  <rect x="184" y="370" width="260" height="160" class="card"/>
+  <text x="216" y="413" class="section">招聘流程管理</text>
+  <rect x="216" y="436" width="92" height="34" class="soft"/>
+  <text x="237" y="458" class="pill">一轮面试</text>
+  <rect x="322" y="436" width="92" height="34" class="soft"/>
+  <text x="343" y="458" class="pill">二轮面试</text>
+  <rect x="216" y="482" width="92" height="34" class="soft"/>
+  <text x="248" y="504" class="pill">Offer</text>
+  <rect x="322" y="482" width="92" height="34" class="soft"/>
+  <text x="342" y="504" class="pill">人才库</text>
+
+  <rect x="510" y="370" width="260" height="160" class="card"/>
+  <text x="542" y="413" class="section">面试协同</text>
+  <text x="542" y="444" class="body">按面试官生成意见框</text>
+  <text x="542" y="471" class="body">每位面试官独立填写</text>
+  <text x="542" y="498" class="body">HR 参考意见做决策</text>
+
+  <rect x="836" y="370" width="260" height="160" class="card"/>
+  <text x="868" y="413" class="section">自动提醒</text>
+  <text x="868" y="444" class="body">每日面试汇总</text>
+  <text x="868" y="471" class="body">面试前 1 小时提醒</text>
+  <text x="868" y="498" class="body">推送到企业微信群</text>
+
+  <path d="M 803 286 C 760 330, 576 334, 444 370" class="line"/>
+  <path d="M 444 450 C 468 450, 488 450, 510 450" class="line"/>
+  <path d="M 770 450 C 792 450, 814 450, 836 450" class="line"/>
+  <path d="M 966 370 C 974 320, 986 286, 1006 254" class="dashed"/>
+
+  <rect x="64" y="606" width="1152" height="90" fill="#ffffff" stroke="#dbe5f0" stroke-width="1.2" rx="18"/>
+  <text x="96" y="642" class="section">一句话理解</text>
+  <text x="96" y="674" class="body">HR 上传简历后，AI 先帮忙整理信息；HR 和面试官在系统里推进流程；系统同步腾讯文档，并按面试时间自动发企业微信群提醒。</text>
+
+  <text x="914" y="674" class="small">注：面试官意见当前保存在系统内，暂不写入腾讯文档。</text>
+</svg>
